@@ -7,9 +7,10 @@ public class ClippedFolderIconLayoutRule {
     public static final int MAX_NUM_ITEMS_IN_PREVIEW = 9;
     private static final int GRID_SIZE = 3;
 
-    // Space around the grid and between cells, as a fraction of the preview size.
-    private static final float OUTER_PADDING = 0.15f;
-    private static final float CELL_GAP = 0.05f;
+    // Space around the grid and between cells, as a fraction of the preview size
+    // (measured from MIUI: mini icons are ~22% of the background, ~13% from its edge).
+    private static final float OUTER_PADDING = 0.13f;
+    private static final float CELL_GAP = 0.04f;
 
     // The max amount of overlap the preview items can go outside of the background bounds.
     public static final float ICON_OVERLAP_FACTOR = 1.125f;
