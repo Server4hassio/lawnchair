@@ -878,7 +878,9 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         if (!(mActivityContext instanceof Launcher)) return;
         Launcher launcher = (Launcher) mActivityContext;
         float alpha = visible ? 1f : 0f;
-        long duration = visible ? 200 : 150;
+        // Show the home screen again quickly, before the close animation
+        // ends, so the folder icon is fully visible when the folder lands on it.
+        long duration = visible ? 100 : 150;
         View[] views = {
                 launcher.getWorkspace(),
                 launcher.getHotseat(),

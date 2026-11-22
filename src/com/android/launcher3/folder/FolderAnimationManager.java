@@ -199,9 +199,12 @@ public class FolderAnimationManager {
             initialColor = folderColor;
             finalColor = folderColor;
         }
-        // Lawnchair: MIUI-style, no panel behind the open folder, not even
-        // while it opens or closes.
-        initialColor = Color.TRANSPARENT;
+        // Lawnchair: MIUI-style, no panel behind the open folder. Opening stays
+        // fully transparent; closing fades in the folder icon's grey as the
+        // folder shrinks, so it hands over to the icon without a flash.
+        if (mIsOpening) {
+            initialColor = Color.TRANSPARENT;
+        }
         finalColor = Color.TRANSPARENT;
 
         mFolderBackground.mutate();
