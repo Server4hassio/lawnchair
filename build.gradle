@@ -248,6 +248,9 @@ android {
         }
 
         release {
+            // Personal build: separate app ID so it never conflicts with an
+            // official Lawnchair install (or its leftovers) on the device.
+            applicationIdSuffix ".mine"
             resValue("string", "derived_app_name", "Lawnchair")
             minifyEnabled true
             shrinkResources true
