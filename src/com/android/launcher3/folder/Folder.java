@@ -878,9 +878,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         if (!(mActivityContext instanceof Launcher)) return;
         Launcher launcher = (Launcher) mActivityContext;
         float alpha = visible ? 1f : 0f;
-        // Show the home screen again quickly, before the close animation
-        // ends, so the folder icon is fully visible when the folder lands on it.
-        long duration = visible ? 100 : 150;
+        long duration = 150;
         View[] views = {
                 launcher.getWorkspace(),
                 launcher.getHotseat(),
@@ -896,7 +894,6 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
     @Override
     protected void handleClose(boolean animate) {
         mIsOpen = false;
-        setHomeScreenVisible(true);
 
         if (!animate && mCurrentAnimator != null && mCurrentAnimator.isRunning()) {
             mCurrentAnimator.cancel();
@@ -1005,6 +1002,9 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                 mFolderIcon.requestFocus();
             }
         }
+        // Lawnchair: bring the home screen back only once the folder icon has
+        // its preview again; showing it earlier flashes an empty folder icon.
+        setHomeScreenVisible(true);
 
         if (mRearrangeOnClose) {
             rearrangeChildren();
