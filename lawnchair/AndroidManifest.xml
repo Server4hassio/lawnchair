@@ -83,32 +83,9 @@
             android:name="app.lawnchair.smartspace.SmartspacePreferencesShortcut"
             android:theme="@style/Theme.Transparent" />
 
-        <receiver
-            android:name="app.lawnchair.gestures.handlers.SleepMethodDeviceAdmin$SleepDeviceAdmin"
-            android:description="@string/dt2s_admin_hint"
-            android:exported="true"
-            android:label="@string/derived_app_name"
-            android:permission="android.permission.BIND_DEVICE_ADMIN">
-            <meta-data
-                android:name="android.app.device_admin"
-                android:resource="@xml/sleep_policy" />
-            <intent-filter>
-                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
-            </intent-filter>
-        </receiver>
-
-        <service
-            android:name="app.lawnchair.LawnchairAccessibilityService"
-            android:exported="false"
-            android:label="@string/derived_app_name"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
-        </service>
+        <!-- Personal build: the double-tap-to-sleep device admin receiver and the
+             accessibility service are left out. Google Play Protect blocks
+             sideloaded apps that declare an accessibility service. -->
 
         <provider
             android:name="app.lawnchair.bugreport.FileProvider"
