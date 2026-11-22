@@ -51,7 +51,7 @@ class PreferenceManager private constructor(private val context: Context) :
     val addIconToHome = BoolPref("pref_add_icon_to_home", true)
     // Set once Deck layout has been switched on automatically on first launch.
     val deckAutoEnabled = BoolPref("pref_deck_auto_enabled", false)
-    val hotseatColumns = IntPref("pref_hotseatColumns", 4, reloadGrid)
+    val hotseatColumns = IntPref("pref_hotseatColumns", 5, reloadGrid)
     val workspaceColumns = IntPref("pref_workspaceColumns", 5)
     val workspaceRows = IntPref("pref_workspaceRows", 6)
     val workspaceIncreaseMaxGridSize = BoolPref("pref_workspace_increase_max_grid_size", false)

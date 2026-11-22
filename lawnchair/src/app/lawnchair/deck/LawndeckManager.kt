@@ -92,79 +92,12 @@ class LawndeckManager(private val context: Context) {
         onProgress: ((String) -> Unit)?,
         onComplete: (() -> Unit)?,
     ) {
-        val apps = launcher?.mAppsView?.appsStore?.apps ?: return
-        if (apps.isEmpty()) {
-            onComplete?.invoke()
-            return
-        }
-
-        onProgress?.invoke("Categorizing apps...")
-
-        val validApps = apps.mapNotNull { it as? AppInfo }
-        // Flat layout: no category folders. Each app is placed directly on the
-        // workspace, sorted alphabetically by its label.
-        val finalCategorizedApps: Map<String, List<AppInfo>> = validApps
-            .sortedBy { it.title?.toString()?.lowercase(Locale.getDefault()) ?: "" }
-            .mapIndexed { index, app -> "app_$index" to listOf(app) }
-            .toMap()
-
         onProgress?.invoke("Adding apps to workspace...")
-
-        val launcher = this.launcher ?: return
-        val model = launcher.model
-
-        // Collect folders to add and count single apps
-        val foldersToAdd = mutableListOf<FolderInfo>()
-        var singleAppCount = 0
-
-        // Process each category
-        finalCategorizedApps.forEach { (category, categoryApps) ->
-            if (categoryApps.isEmpty()) return@forEach
-
-            if (categoryApps.size == 1) {
-                // Single app - add directly to workspace
-                val app = categoryApps.first()
-                ItemInstallQueue.INSTANCE.get(context).queueItem(app.targetPackage, app.user)
-                singleAppCount++
-            } else {
-                // Multiple apps - create folder
-                onProgress?.invoke("Creating folder: $category...")
-                val folderInfo = createFolderInfo(category, categoryApps)
-                if (folderInfo != null) {
-                    foldersToAdd.add(folderInfo)
-                }
-            }
-        }
-
-        // Add all folders with their items to workspace using custom task
-        if (foldersToAdd.isNotEmpty()) {
-            // Wait for folder task to complete
-            model.enqueueModelUpdateTask(
-                AddFoldersWithItemsTask(foldersToAdd) {
-                    // Callback runs on UI thread from model task
-                    // Also wait for ItemInstallQueue to finish for single apps
-                    // ItemInstallQueue processes asynchronously, so we need to wait a bit
-                    if (singleAppCount > 0) {
-                        // Post to handler to give ItemInstallQueue time to process
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                            onComplete?.invoke()
-                        }, 800) // Wait for queue to process
-                    } else {
-                        onComplete?.invoke()
-                    }
-                },
-            )
-        } else {
-            // No folders, but may have single apps
-            if (singleAppCount > 0) {
-                // Give ItemInstallQueue time to process
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                    onComplete?.invoke()
-                }, 800) // Wait for queue to process
-            } else {
-                onComplete?.invoke()
-            }
-        }
+        // Builds the dock, pages and folders from PresetLayout; any other
+        // installed app is placed on the pages after it.
+        LauncherAppState.getInstance(context).model.enqueueModelUpdateTask(
+            ApplyPresetLayoutTask { onComplete?.invoke() },
+        )
     }
 
     /**
@@ -185,23 +118,6 @@ class LawndeckManager(private val context: Context) {
         // Flat layout: newly installed apps go straight onto the workspace,
         // never into a category folder.
         ItemInstallQueue.INSTANCE.get(context).queueItem(packageName, user)
-    }
-
-    private fun createFolderInfo(categoryName: String, apps: List<AppInfo>): FolderInfo? {
-        if (apps.isEmpty()) return null
-
-        val folderInfo = FolderInfo().apply {
-            title = categoryName
-        }
-
-        // Create workspace items for each app and add to folder
-        apps.forEach { app ->
-            val workspaceItem = app.makeWorkspaceItem(context) ?: return@forEach
-            folderInfo.add(workspaceItem)
-        }
-
-        // Only return folder if it has items
-        return if (folderInfo.getContents().isNotEmpty()) folderInfo else null
     }
 
     private data class DatabaseFiles(
