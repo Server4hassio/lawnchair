@@ -199,7 +199,9 @@ public class FolderAnimationManager {
             initialColor = folderColor;
             finalColor = folderColor;
         }
-        // Lawnchair: MIUI-style, no panel behind the open folder.
+        // Lawnchair: MIUI-style, no panel behind the open folder, not even
+        // while it opens or closes.
+        initialColor = Color.TRANSPARENT;
         finalColor = Color.TRANSPARENT;
 
         mFolderBackground.mutate();
