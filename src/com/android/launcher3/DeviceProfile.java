@@ -1562,8 +1562,10 @@ public class DeviceProfile {
         updateFolderCellSize(1f, res);
 
         // Responsive grid doesn't need to scale the folder
-        if (mIsResponsiveGrid)
+        if (mIsResponsiveGrid) {
+            applyMiuiFolderStyle();
             return;
+        }
 
         // For usability we can't have the folder use the whole width of the screen
         Point totalWorkspacePadding = getTotalWorkspacePadding();
@@ -1587,6 +1589,25 @@ public class DeviceProfile {
         if (scale < 1f) {
             updateFolderCellSize(scale, res);
         }
+        applyMiuiFolderStyle();
+    }
+
+    /**
+     * Lawnchair: MIUI-style open folder. Wide cells with no gutters, so three
+     * columns span most of the screen, and a large title area above the grid.
+     */
+    private void applyMiuiFolderStyle() {
+        int width = availableWidthPx;
+        int textHeight = Utilities.calculateTextHeight(folderChildTextSizePx);
+        folderCellWidthPx = Math.round(width * 0.26f);
+        folderChildIconSizePx = Math.min(folderChildIconSizePx, folderCellWidthPx);
+        folderCellHeightPx = Math.max(Math.round(folderCellWidthPx * 1.05f),
+                folderChildIconSizePx + folderChildDrawablePaddingPx + textHeight);
+        folderCellLayoutBorderSpacePx = new Point(0, 0);
+        folderContentPaddingLeftRight = 0;
+        folderContentPaddingTop = 0;
+        folderFooterHeightPx = Math.round(width * 0.2f);
+        folderLabelTextSizePx = Math.round(width * 0.075f);
     }
 
     private void updateFolderCellSize(float scale, Resources res) {

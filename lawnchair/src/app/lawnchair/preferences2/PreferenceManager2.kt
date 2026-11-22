@@ -601,7 +601,8 @@ class PreferenceManager2 private constructor(private val context: Context) :
 
     val folderColumns = idpPreference(
         key = intPreferencesKey(name = "folder_columns"),
-        defaultSelector = { numFolderColumns[INDEX_DEFAULT] },
+        // MIUI-style folders: 3 icons per row.
+        defaultSelector = { 3 },
         onSet = { reloadHelper.reloadGrid() },
     )
 

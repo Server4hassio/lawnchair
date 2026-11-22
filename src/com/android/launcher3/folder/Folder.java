@@ -337,6 +337,11 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                 (getFooterHeight() - mFolderName.getLineHeight()) / 2,
                 mFolderName.getPaddingRight(),
                 (getFooterHeight() - mFolderName.getLineHeight()) / 2);
+        // Lawnchair: MIUI-style title, aligned with the first column's icon.
+        int titleInset = Math.max(0, (dp.folderCellWidthPx - dp.folderChildIconSizePx) / 2);
+        mFooter.setPadding(titleInset, 0, titleInset, 0);
+        mFolderName.setPadding(0, mFolderName.getPaddingTop(), 0,
+                mFolderName.getPaddingBottom());
 
         @ColorInt
         int accentColor = Themes.getColorAccent(mFolderName.getContext());
@@ -735,6 +740,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
 
         mContent.bindItems(items);
         centerAboutIcon();
+        setHomeScreenVisible(false);
         mItemsInvalidated = true;
         updateTextViewFocus();
 
@@ -864,9 +870,31 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         return (type & TYPE_FOLDER) != 0;
     }
 
+    /**
+     * Lawnchair: MIUI-style, only the wallpaper and the folder are visible
+     * while a folder is open.
+     */
+    private void setHomeScreenVisible(boolean visible) {
+        if (!(mActivityContext instanceof Launcher)) return;
+        Launcher launcher = (Launcher) mActivityContext;
+        float alpha = visible ? 1f : 0f;
+        long duration = visible ? 200 : 150;
+        View[] views = {
+                launcher.getWorkspace(),
+                launcher.getHotseat(),
+                launcher.getWorkspace() != null ? launcher.getWorkspace().getPageIndicator() : null,
+        };
+        for (View v : views) {
+            if (v != null) {
+                v.animate().alpha(alpha).setDuration(duration).start();
+            }
+        }
+    }
+
     @Override
     protected void handleClose(boolean animate) {
         mIsOpen = false;
+        setHomeScreenVisible(true);
 
         if (!animate && mCurrentAnimator != null && mCurrentAnimator.isRunning()) {
             mCurrentAnimator.cancel();
@@ -1248,8 +1276,12 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         int centeredTop = centerY - height / 2;
 
         sTempRect.set(mActivityContext.getFolderBoundingBox());
-        int left = Utilities.boundToRange(centeredLeft, sTempRect.left, sTempRect.right - width);
-        int top = Utilities.boundToRange(centeredTop, sTempRect.top, sTempRect.bottom - height);
+        // Lawnchair: MIUI-style, the open folder sits in the middle of the
+        // screen rather than next to its icon.
+        int left = Utilities.boundToRange((parent.getWidth() - width) / 2,
+                sTempRect.left, sTempRect.right - width);
+        int top = Utilities.boundToRange((parent.getHeight() - height) / 2,
+                sTempRect.top, sTempRect.bottom - height);
         int[] inOutPosition = new int[]{left, top};
         mActivityContext.updateOpenFolderPosition(inOutPosition, sTempRect, width, height);
         left = inOutPosition[0];

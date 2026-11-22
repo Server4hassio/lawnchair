@@ -30,6 +30,7 @@ import android.animation.ObjectAnimator;
 import android.animation.TimeInterpolator;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.GradientDrawable;
 import android.util.Property;
@@ -177,9 +178,12 @@ public class FolderAnimationManager {
         int initialX = folderIconPos.left + mFolder.getPaddingLeft()
                 + Math.round(mPreviewBackground.getOffsetX() * scaleRelativeToDragLayer)
                 - paddingOffsetX - previewItemOffsetX;
+        // Lawnchair: the title sits above the grid, so the grid starts one
+        // footer height below the top of the folder.
+        int titleOffsetY = mFolder.getFooterHeight();
         int initialY = folderIconPos.top + mFolder.getPaddingTop()
                 + Math.round(mPreviewBackground.getOffsetY() * scaleRelativeToDragLayer)
-                - paddingOffsetY;
+                - paddingOffsetY - titleOffsetY;
         final float xDistance = initialX - lp.x;
         final float yDistance = initialY - lp.y;
 
@@ -195,6 +199,8 @@ public class FolderAnimationManager {
             initialColor = folderColor;
             finalColor = folderColor;
         }
+        // Lawnchair: MIUI-style, no panel behind the open folder.
+        finalColor = Color.TRANSPARENT;
 
         mFolderBackground.mutate();
         mFolderBackground.setColor(mIsOpening ? initialColor : finalColor);
@@ -202,9 +208,9 @@ public class FolderAnimationManager {
         // Set up the reveal animation that clips the Folder.
         int totalOffsetX = paddingOffsetX + previewItemOffsetX;
         Rect startRect = new Rect(totalOffsetX,
-                paddingOffsetY,
+                paddingOffsetY + titleOffsetY,
                 Math.round((totalOffsetX + initialSize)),
-                Math.round((paddingOffsetY + initialSize)));
+                Math.round((paddingOffsetY + titleOffsetY + initialSize)));
         Rect endRect = new Rect(0, 0, lp.width, lp.height);
         float finalRadius = mFolderBackground.getCornerRadius();
 

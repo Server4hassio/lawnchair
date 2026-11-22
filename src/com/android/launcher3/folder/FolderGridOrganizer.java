@@ -41,8 +41,8 @@ public class FolderGridOrganizer {
     private int mCountX;
     private int mCountY;
     private boolean mDisplayingUpperLeftQuadrant = false;
-    private static final int PREVIEW_MAX_ROWS = 2;
-    private static final int PREVIEW_MAX_COLUMNS = 2;
+    private static final int PREVIEW_MAX_ROWS = 3;
+    private static final int PREVIEW_MAX_COLUMNS = 3;
 
     /**
      * Note: must call {@link #setFolderInfo(FolderInfo)} manually for verifier to work.
@@ -98,6 +98,15 @@ public class FolderGridOrganizer {
      * maintaining the restrictions of {@link #mMaxCountX} &amp; {@link #mMaxCountY}.
      */
     private void calculateGridSize(int count) {
+        // Lawnchair: MIUI-style folders always use the full column count, so
+        // items line up left to right in rows of the same width; only the
+        // number of rows grows with the item count.
+        mCountX = mMaxCountX;
+        mCountY = Math.max(1, Math.min(mMaxCountY, (count + mMaxCountX - 1) / mMaxCountX));
+    }
+
+    @SuppressWarnings("unused")
+    private void calculateGridSizeAosp(int count) {
         boolean done;
         int gridCountX = mCountX;
         int gridCountY = mCountY;
@@ -196,6 +205,11 @@ public class FolderGridOrganizer {
     public boolean isItemInPreview(int page, int rank) {
         // First page items are laid out such that the first 4 items are always in the upper
         // left quadrant. For all other pages, we need to check the row and col.
+        // Lawnchair: the preview always shows the first items of the first page,
+        // in order (MIUI style).
+        if (page == 0) {
+            return rank < MAX_NUM_ITEMS_IN_PREVIEW;
+        }
         if (page > 0 || mDisplayingUpperLeftQuadrant) {
             int col = rank % mCountX;
             int row = rank / mCountX;

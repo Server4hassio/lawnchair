@@ -21,13 +21,7 @@
     android:defaultFocusHighlightEnabled="false"
     android:orientation="vertical" >
 
-    <com.android.launcher3.folder.FolderPagedView
-        android:id="@+id/folder_content"
-        android:clipToPadding="false"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        launcher:pageIndicator="@+id/folder_page_indicator" />
-
+    <!-- Lawnchair: MIUI-style, the title sits above the grid. -->
     <LinearLayout
         android:id="@+id/folder_footer"
         android:layout_width="match_parent"
@@ -45,14 +39,15 @@
             style="@style/TextHeadline"
             android:layout_weight="1"
             android:background="@android:color/transparent"
-            android:gravity="center_horizontal"
+            android:gravity="start|center_vertical"
             android:hint="@string/folder_hint_text"
             android:imeOptions="flagNoExtractUi"
             android:importantForAutofill="no"
             android:singleLine="true"
-            android:textColor="?attr/folderTextColor"
+            android:fontFamily="sans-serif-light"
+            android:textColor="?attr/workspaceTextColor"
             android:textColorHighlight="?android:attr/colorControlHighlight"
-            android:textColorHint="?attr/folderHintTextColor"/>
+            android:textColorHint="?attr/workspaceTextColor"/>
 
         <com.android.launcher3.pageindicators.PageIndicatorDots
             android:id="@+id/folder_page_indicator"
@@ -63,5 +58,12 @@
             />
 
     </LinearLayout>
+
+    <com.android.launcher3.folder.FolderPagedView
+        android:id="@+id/folder_content"
+        android:clipToPadding="false"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        launcher:pageIndicator="@+id/folder_page_indicator" />
 
 </com.android.launcher3.folder.Folder>
