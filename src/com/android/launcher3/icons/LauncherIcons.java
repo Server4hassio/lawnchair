@@ -16,12 +16,21 @@
 
 package com.android.launcher3.icons;
 
+import static android.graphics.drawable.AdaptiveIconDrawable.getExtraInsetFraction;
+
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.RectF;
 import android.graphics.drawable.AdaptiveIconDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.InsetDrawable;
 import android.os.UserHandle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.android.launcher3.Flags;
 import com.android.launcher3.InvariantDeviceProfile;
@@ -34,6 +43,10 @@ import com.android.launcher3.util.Themes;
 import com.android.launcher3.util.UserIconInfo;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+import app.lawnchair.icons.ExtendedBitmapDrawable;
+import app.lawnchair.icons.IconPreferencesKt;
 
 /**
  * Wrapper class to provide access to {@link BaseIconFactory} and also to
@@ -129,4 +142,59 @@ public class LauncherIcons extends BaseIconFactory implements AutoCloseable {
             mPool = new ConcurrentLinkedQueue<>();
         }
     }
+    /**
+     * Lawnchair: MIUI-style legacy icons. Unless "Auto-adaptive icons" is on,
+     * a non-adaptive icon that fills a square is clipped to the icon shape at
+     * full size, so it gets rounded corners instead of a coloured backdrop.
+     */
+    @Override
+    protected Drawable normalizeAndWrapToAdaptiveIcon(@Nullable Drawable icon,
+            @Nullable RectF outIconBounds, @NonNull float[] outScale) {
+        return super.normalizeAndWrapToAdaptiveIcon(
+                clipSquareLegacyIcon(icon), outIconBounds, outScale);
+    }
+
+    @Nullable
+    private Drawable clipSquareLegacyIcon(@Nullable Drawable icon) {
+        if (icon == null
+                || icon instanceof AdaptiveIconDrawable
+                || icon instanceof ThemedIconDrawable.ThemedBitmapIcon
+                || ExtendedBitmapDrawable.isFromIconPack(icon)
+                || IconPreferencesKt.shouldWrapAdaptive(mContext)
+                || !fillsSquare(icon)) {
+            return icon;
+        }
+        // Adaptive icon layers are drawn larger than the mask; inset the icon
+        // so it covers exactly the masked area.
+        float extra = getExtraInsetFraction();
+        Drawable foreground = new InsetDrawable(icon, extra / (1 + 2 * extra));
+        return new CustomAdaptiveIconDrawable(new ColorDrawable(Color.TRANSPARENT), foreground);
+    }
+
+    /** True if the icon is opaque near all four corners, i.e. a plain square. */
+    private static boolean fillsSquare(@NonNull Drawable icon) {
+        final int size = 64;
+        final int inset = 3;
+        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        try {
+            Canvas canvas = new Canvas(bitmap);
+            android.graphics.Rect oldBounds = new android.graphics.Rect(icon.getBounds());
+            icon.setBounds(0, 0, size, size);
+            icon.draw(canvas);
+            icon.setBounds(oldBounds);
+            int far = size - 1 - inset;
+            int[][] points = {{inset, inset}, {far, inset}, {inset, far}, {far, far}};
+            for (int[] p : points) {
+                if (Color.alpha(bitmap.getPixel(p[0], p[1])) < 200) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        } finally {
+            bitmap.recycle();
+        }
+    }
 }
+

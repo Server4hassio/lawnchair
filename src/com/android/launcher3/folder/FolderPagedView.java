@@ -368,8 +368,9 @@ public class FolderPagedView extends PagedView<PageIndicatorDots> implements Cli
         // Update footer
         mPageIndicator.setVisibility(getPageCount() > 1 ? View.VISIBLE : View.GONE);
         // Set the gravity as LEFT or RIGHT instead of START, as START depends on the actual text.
-        mFolder.mFolderName.setGravity(getPageCount() > 1 ?
-                (mIsRtl ? Gravity.RIGHT : Gravity.LEFT) : Gravity.CENTER_HORIZONTAL);
+        // Lawnchair: MIUI-style, the title is always aligned to the start.
+        mFolder.mFolderName.setGravity(
+                (mIsRtl ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
     }
 
     public int getDesiredWidth() {

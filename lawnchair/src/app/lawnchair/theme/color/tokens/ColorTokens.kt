@@ -109,7 +109,7 @@ object ColorTokens {
     @JvmField val FolderPaginationColor = DayNightColorToken(Accent1_600, Accent2_100)
 
     // MIUI-style: neutral dark grey behind the folder preview in light and dark theme.
-    @JvmField val FolderPreviewColor = DayNightColorToken(StaticColorToken(0xff3a3d45), StaticColorToken(0xff3a3d45))
+    @JvmField val FolderPreviewColor = DayNightColorToken(StaticColorToken(0xff303238), StaticColorToken(0xff303238))
 
     @JvmField val PopupColorPrimary = DayNightColorToken(Accent2_50, Neutral2_800)
 

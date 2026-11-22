@@ -231,7 +231,8 @@ class LawnchairIconProvider @JvmOverloads constructor(
     }
 
     override fun getSystemIconState(): String {
-        return super.getSystemIconState() + ",pack:${iconPackPref.get()}/${themedIconPackPref.get()},ver:$iconPackVersion"
+        // "legacyClip" makes the icon cache rebuild after the MIUI-style legacy icon change.
+        return super.getSystemIconState() + ",pack:${iconPackPref.get()}/${themedIconPackPref.get()},ver:$iconPackVersion,legacyClip:1"
     }
 
     override fun registerIconChangeListener(
