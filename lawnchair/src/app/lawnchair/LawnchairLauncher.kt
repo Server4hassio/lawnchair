@@ -38,6 +38,7 @@ import app.lawnchair.LawnchairApp.Companion.showQuickstepWarningIfNecessary
 import app.lawnchair.compat.LawnchairQuickstepCompat
 import app.lawnchair.data.AppDatabase
 import app.lawnchair.data.wallpaper.service.WallpaperService
+import app.lawnchair.deck.LawndeckManager
 import app.lawnchair.factory.LawnchairWidgetHolder
 import app.lawnchair.gestures.GestureController
 import app.lawnchair.gestures.VerticalSwipeTouchController
@@ -61,6 +62,7 @@ import com.android.launcher3.LauncherAppState
 import com.android.launcher3.LauncherState
 import com.android.launcher3.R
 import com.android.launcher3.Utilities
+import com.android.launcher3.model.data.AppInfo
 import com.android.launcher3.model.data.ItemInfo
 import com.android.launcher3.popup.SystemShortcut
 import com.android.launcher3.shortcuts.DeepShortcutView
@@ -72,6 +74,7 @@ import com.android.launcher3.uioverrides.states.BackgroundAppState
 import com.android.launcher3.uioverrides.states.OverviewState
 import com.android.launcher3.util.ActivityOptionsWrapper
 import com.android.launcher3.util.Executors
+import com.android.launcher3.util.PackageUserKey
 import com.android.launcher3.util.RunnableList
 import com.android.launcher3.util.SystemUiController.UI_STATE_BASE_WINDOW
 import com.android.launcher3.util.Themes
@@ -287,6 +290,32 @@ class LawnchairLauncher : QuickstepLauncher() {
     override fun registerBackDispatcher() {
         if (LawnchairApp.isAtleastT) {
             super.registerBackDispatcher()
+        }
+    }
+
+    override fun bindAllApplications(
+        apps: Array<AppInfo>,
+        flags: Int,
+        packageUserKeytoUidMap: Map<PackageUserKey, Int>,
+    ) {
+        super.bindAllApplications(apps, flags, packageUserKeytoUidMap)
+        enableDeckOnFirstLaunch(apps)
+    }
+
+    /**
+     * Switches on Deck layout (no app drawer, every app on the home screen)
+     * the first time the app list is available, mirroring what the
+     * Home settings > Layout > Deck toggle does.
+     */
+    private fun enableDeckOnFirstLaunch(apps: Array<AppInfo>) {
+        if (apps.isEmpty() || prefs.deckAutoEnabled.get()) return
+        prefs.deckAutoEnabled.set(true)
+        if (preferenceManager2.deckLayout.firstBlocking()) return
+        lifecycleScope.launch {
+            preferenceManager2.swipeUpGestureHandler.set(GestureHandlerConfig.NoOp)
+            preferenceManager2.deckLayout.set(true)
+            prefs.addIconToHome.set(true)
+            LawndeckManager(this@LawnchairLauncher).enableLawndeck()
         }
     }
 

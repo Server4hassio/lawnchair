@@ -3,10 +3,8 @@ package app.lawnchair.deck
 import android.content.Context
 import android.util.Log
 import app.lawnchair.LawnchairLauncher
-import app.lawnchair.flowerpot.Flowerpot
 import app.lawnchair.launcher
 import app.lawnchair.launcherNullable
-import app.lawnchair.util.categorizeAppsWithSystemAndGoogle
 import app.lawnchair.util.restartLauncher
 import com.android.launcher3.InvariantDeviceProfile
 import com.android.launcher3.LauncherAppState
@@ -18,7 +16,6 @@ import com.android.launcher3.model.data.FolderInfo
 import com.android.launcher3.model.data.WorkspaceItemInfo
 import com.android.launcher3.provider.RestoreDbTask
 import com.android.launcher3.util.ComponentKey
-import com.android.launcher3.util.PackageManagerHelper
 import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.CompletableDeferred
@@ -104,7 +101,12 @@ class LawndeckManager(private val context: Context) {
         onProgress?.invoke("Categorizing apps...")
 
         val validApps = apps.mapNotNull { it as? AppInfo }
-        val finalCategorizedApps = categorizeAppsWithSystemAndGoogle(validApps, context)
+        // Flat layout: no category folders. Each app is placed directly on the
+        // workspace, sorted alphabetically by its label.
+        val finalCategorizedApps: Map<String, List<AppInfo>> = validApps
+            .sortedBy { it.title?.toString()?.lowercase(Locale.getDefault()) ?: "" }
+            .mapIndexed { index, app -> "app_$index" to listOf(app) }
+            .toMap()
 
         onProgress?.invoke("Adding apps to workspace...")
 
@@ -166,13 +168,13 @@ class LawndeckManager(private val context: Context) {
     }
 
     /**
-     * Adds a newly installed app to the workspace with proper categorization.
+     * Adds a newly installed app directly to the workspace (no category folders).
      * This is called when a new app is installed and deck layout is enabled.
      *
      * @param packageName The package name of the newly installed app
      * @param user The user handle for the app
-     * @param modelWriter The ModelWriter to use for database operations (must be called from model thread)
-     * @param dataModel The BgDataModel to search for existing folders
+     * @param modelWriter Unused; kept for the existing caller's signature
+     * @param dataModel Unused; kept for the existing caller's signature
      */
     fun addNewlyInstalledApp(
         packageName: String,
@@ -180,74 +182,9 @@ class LawndeckManager(private val context: Context) {
         modelWriter: com.android.launcher3.model.ModelWriter,
         dataModel: com.android.launcher3.model.BgDataModel,
     ) {
-        // Get app info from LauncherApps directly (app might not be in all apps list yet)
-        val launcherApps = context.getSystemService(android.content.pm.LauncherApps::class.java)
-            ?: return
-        val activities = launcherApps.getActivityList(packageName, user)
-        if (activities.isEmpty()) return
-
-        val activityInfo = activities[0]
-        val appInfo = AppInfo(context, activityInfo, user)
-
-        val intent = appInfo.intent
-
-        // Determine category: Google Apps > System Apps > Flowerpot categories
-        val category = when {
-            packageName.startsWith("com.google.") -> "Google Apps"
-
-            intent != null && PackageManagerHelper.isSystemApp(context, intent) -> "System Apps"
-
-            else -> {
-                // Use flowerpot to categorize the app
-                val potsManager = Flowerpot.Manager.getInstance(context)
-                val categorizedApps = potsManager.categorizeApps(listOf(appInfo))
-
-                if (categorizedApps.isEmpty()) {
-                    // No category found, add directly to workspace
-                    ItemInstallQueue.INSTANCE.get(context).queueItem(packageName, user)
-                    return
-                }
-
-                // Get the category from flowerpot
-                categorizedApps.entries.firstOrNull()?.key ?: run {
-                    ItemInstallQueue.INSTANCE.get(context).queueItem(packageName, user)
-                    return
-                }
-            }
-        }
-
-        // Check if there's already a folder for this category on workspace
-        val existingFolder = findFolderByCategory(category, dataModel)
-
-        if (existingFolder != null) {
-            // Add app to existing folder
-            val workspaceItem = appInfo.makeWorkspaceItem(context) ?: return
-            existingFolder.add(workspaceItem)
-            // Update folder in database
-            modelWriter.addOrMoveItemInDatabase(
-                workspaceItem,
-                existingFolder.id,
-                0,
-                existingFolder.getContents().size % 4,
-                existingFolder.getContents().size / 4,
-            )
-        } else {
-            // Single app in category, add directly to workspace
-            // The app will be categorized properly when added
-            ItemInstallQueue.INSTANCE.get(context).queueItem(packageName, user)
-        }
-    }
-
-    private fun findFolderByCategory(category: String, dataModel: com.android.launcher3.model.BgDataModel): FolderInfo? {
-        // Search through workspace items to find folder with matching category name
-        synchronized(dataModel) {
-            dataModel.itemsIdMap.forEach { item ->
-                if (item is FolderInfo && item.title?.toString() == category) {
-                    return item
-                }
-            }
-        }
-        return null
+        // Flat layout: newly installed apps go straight onto the workspace,
+        // never into a category folder.
+        ItemInstallQueue.INSTANCE.get(context).queueItem(packageName, user)
     }
 
     private fun createFolderInfo(categoryName: String, apps: List<AppInfo>): FolderInfo? {
