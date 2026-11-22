@@ -37,6 +37,7 @@ import static com.android.launcher3.util.window.RefreshRateTracker.getSingleFram
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.annotation.ColorInt;
 import android.annotation.SuppressLint;
 import android.appwidget.AppWidgetHostView;
@@ -740,6 +741,7 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
 
         mContent.bindItems(items);
         centerAboutIcon();
+        setAlpha(1f);
         setHomeScreenVisible(false);
         mItemsInvalidated = true;
         updateTextViewFocus();
@@ -943,7 +945,18 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
         mContent.snapToPageImmediately(mContent.getDestinationPage());
 
         cancelRunningAnimations();
-        AnimatorSet a = new FolderAnimationManager(this, false /* isOpening */).getAnimator();
+        // Lawnchair: MIUI-style close. The folder simply fades out where it is
+        // while the home screen (with the folder icon, preview restored) fades
+        // back in; nothing shrinks or moves.
+        if (mFolderIcon != null) {
+            mFolderIcon.setVisibility(View.VISIBLE);
+            mFolderIcon.setIconVisible(true);
+            mFolderIcon.mFolderName.setTextVisibility(true);
+        }
+        setHomeScreenVisible(true);
+        AnimatorSet a = new AnimatorSet();
+        a.play(ObjectAnimator.ofFloat(this, View.ALPHA, getAlpha(), 0f));
+        a.setDuration(150);
         a.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationStart(Animator animation) {
@@ -960,7 +973,8 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                         setWindowInsetsAnimationCallback(mKeyboardInsetAnimationCallback);
                     }
                 }
-                closeComplete(true);
+                closeComplete(false);
+                setAlpha(1f);
                 announceAccessibilityChanges();
                 mIsAnimatingClosed = false;
             }
@@ -1002,8 +1016,8 @@ public class Folder extends AbstractFloatingView implements ClipPathView, DragSo
                 mFolderIcon.requestFocus();
             }
         }
-        // Lawnchair: bring the home screen back only once the folder icon has
-        // its preview again; showing it earlier flashes an empty folder icon.
+        // Lawnchair: make sure the home screen is back (also covers closing
+        // without animation).
         setHomeScreenVisible(true);
 
         if (mRearrangeOnClose) {
